@@ -10,13 +10,15 @@ interface FetchNotesResponse {
 
 
 
-export async function fetchNotes(page: number = 1): Promise<FetchNotesResponse> {
+export async function fetchNotes(page: number = 1,
+  search: string = ""): Promise<FetchNotesResponse> {
   const response = await axios.get<FetchNotesResponse>(
     "https://notehub-public.goit.study/api/notes",
     {
       params: {
         page,
-        perPage: 12
+        perPage: 12,
+         search: search || undefined,
     },
       
       headers: {
