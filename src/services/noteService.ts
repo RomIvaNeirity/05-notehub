@@ -5,7 +5,6 @@ import type { NoteFormValues } from "../types/noteFormValues";
 interface FetchNotesResponse {
   notes: Note[];
   totalPages: number;
-  page: number;
 }
 
 export async function fetchNotes(
