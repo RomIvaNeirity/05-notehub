@@ -2,11 +2,13 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import type { FormikHelpers } from "formik";
 import * as Yup from "yup";
 import css from "./NoteForm.module.css";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { NoteFormValues } from "../../types/noteFormValues";
+import { createNote } from "../../services/noteService";
 
 interface NoteFormProps {
   onCancel: () => void;
-  onSubmit: (values: NoteFormValues) => void;
+  onSuccess: () => void;
 }
 
 const initialValues: NoteFormValues = {
@@ -22,17 +24,29 @@ const NoteFormSchema = Yup.object().shape({
     .required("Title is required"),
   content: Yup.string().max(500, "Content is too long"),
   tag: Yup.string()
-    .oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"], "Invalid tag")
+    .oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"])
     .required("Tag is required"),
 });
 
-function NoteForm({ onSubmit, onCancel }: NoteFormProps) {
+function NoteForm({ onCancel, onSuccess }: NoteFormProps) {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: createNote,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      onSuccess();
+    },
+    onError: (error) => {
+      console.log(error);
+    },
+  });
+
   const handleSubmit = (
     values: NoteFormValues,
     actions: FormikHelpers<NoteFormValues>
   ) => {
-    console.log("FORM VALUES:", values);
-    onSubmit(values);
+    mutation.mutate(values);
     actions.resetForm();
   };
 

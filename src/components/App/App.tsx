@@ -1,6 +1,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDebounce } from "use-debounce";
+import toast, { Toaster } from "react-hot-toast";
 
 import css from "./App.module.css";
 
@@ -10,13 +11,7 @@ import NoteList from "../NoteList/NoteList.tsx";
 import Modal from "../Modal/Modal.tsx";
 import NoteForm from "../NoteForm/NoteForm.tsx";
 
-import {
-  fetchNotes,
-  createNote,
-  deleteNote,
-} from "../../services/noteService.ts";
-
-import type { NoteFormValues } from "../../types/noteFormValues.ts";
+import { fetchNotes } from "../../services/noteService.ts";
 
 function App() {
   const [currentPage, setCurrentPage] = useState(0);
@@ -24,22 +19,21 @@ function App() {
   const [search, setSearch] = useState("");
   const [debouncedSearch] = useDebounce(search, 300);
 
-  const { data, refetch } = useQuery({
+  const { data } = useQuery({
     queryKey: ["notes", currentPage, debouncedSearch],
     queryFn: () => fetchNotes(currentPage + 1, debouncedSearch),
     placeholderData: keepPreviousData,
   });
 
-  const handleDelete = async (id: string) => {
-    await deleteNote(id);
-    refetch();
-  };
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [debouncedSearch]);
 
-  const handleCreateNote = async (values: NoteFormValues) => {
-    await createNote(values);
-    refetch();
-    setModalOpen(false);
-  };
+  useEffect(() => {
+    if (data && data.notes.length === 0) {
+      toast.error("No notes found.");
+    }
+  }, [data]);
 
   return (
     <div className={css.app}>
@@ -63,13 +57,14 @@ function App() {
             children={
               <NoteForm
                 onCancel={() => setModalOpen(false)}
-                onSubmit={handleCreateNote}
+                onSuccess={() => setModalOpen(false)}
               />
             }
           />
         )}
       </header>
-      {data && <NoteList notes={data.notes} onDelete={handleDelete} />}
+      {data && <NoteList notes={data.notes} />}
+      <Toaster />
     </div>
   );
 }
